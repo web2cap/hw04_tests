@@ -1,5 +1,8 @@
+from http import HTTPStatus
+
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
+
 from posts.models import Group, Post
 
 User = get_user_model()
@@ -9,22 +12,24 @@ class PostURLTests(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.user = User.objects.create_user(username="TestAuthor")
+        cls.user_username_value = "TestAuthor"
+        cls.user = User.objects.create_user(username=cls.user_username_value)
         cls.user_not_author = User.objects.create_user(
             username="TestNotAuthor"
         )
+        cls.group_slug_value = "testslug"
         cls.group = Group.objects.create(
             title="Тестовая группа",
-            slug="testslug",
+            slug=cls.group_slug_value,
             description="Тестовое описание",
         )
         cls.post = Post.objects.create(
             author=cls.user,
             text="Тестовая запись",
         )
+        cls.url_unexisting_page = "/unexisting_page/"
 
     def setUp(self):
-        self.guest_client = Client()
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
         self.authorized_client_not_author = Client()
@@ -35,23 +40,22 @@ class PostURLTests(TestCase):
 
         url_names = {
             "/",
-            "/group/testslug/",
-            "/profile/TestAuthor/",
+            f"/group/{self.group_slug_value}/",
+            f"/profile/{self.user_username_value}/",
             f"/posts/{self.post.pk}/",
         }
         for address in url_names:
             with self.subTest(address=address):
-                response = self.guest_client.get(address)
-                self.assertEqual(response.status_code, 200)
+                response = self.client.get(address)
+                self.assertEqual(response.status_code, HTTPStatus.OK)
 
-    # Проверяем доступность страниц для авторизованного пользователя
     def test_autorized_urls_access(self):
         """Страницы доступные авторизованному пользователю."""
 
         url_names = {
             "/",
-            "/group/testslug/",
-            "/profile/TestAuthor/",
+            f"/group/{self.group_slug_value}/",
+            f"/profile/{self.user_username_value}/",
             f"/posts/{self.post.pk}/",
             f"/posts/{self.post.pk}/edit/",
             "/create/",
@@ -59,9 +63,8 @@ class PostURLTests(TestCase):
         for address in url_names:
             with self.subTest(address=address):
                 response = self.authorized_client.get(address)
-                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.status_code, HTTPStatus.OK)
 
-    # Проверяем редиректы для неавторизованного пользователя
     def test_list_url_redirect_guest(self):
         """Страницы перенаправляют анонимного пользователя
         на страницу логина.
@@ -75,10 +78,9 @@ class PostURLTests(TestCase):
         }
         for address, redirect_address in url_names_redirects.items():
             with self.subTest(address=address):
-                response = self.guest_client.get(address, follow=True)
+                response = self.client.get(address, follow=True)
                 self.assertRedirects(response, redirect_address)
 
-    # Редирект для не автора
     def test_redirect_not_author(self):
         """Редирект при попытке редактирования поста не авром"""
 
@@ -87,14 +89,13 @@ class PostURLTests(TestCase):
         )
         self.assertRedirects(response, f"/posts/{self.post.pk}/")
 
-    # Проверка вызываемых шаблонов для каждого адреса
     def test_task_list_url_corret_templates(self):
         """Страницы доступные авторизованному пользователю."""
 
         url_names_templates = {
             "/": "posts/index.html",
-            "/group/testslug/": "posts/group_list.html",
-            "/profile/TestAuthor/": "posts/profile.html",
+            f"/group/{self.group_slug_value}/": "posts/group_list.html",
+            f"/profile/{self.user_username_value}/": "posts/profile.html",
             f"/posts/{self.post.pk}/": "posts/post_detail.html",
             f"/posts/{self.post.pk}/edit/": "posts/create_post.html",
             "/create/": "posts/create_post.html",
@@ -104,8 +105,8 @@ class PostURLTests(TestCase):
                 response = self.authorized_client.get(address)
                 self.assertTemplateUsed(response, template)
 
-    # Страница не найденна
     def test_page_not_found(self):
         """Страница не найденна."""
-        response = self.guest_client.get("/unexisting_page/")
-        self.assertEqual(response.status_code, 404)
+
+        response = self.client.get(self.url_unexisting_page)
+        self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
