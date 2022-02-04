@@ -1,7 +1,6 @@
 from django.contrib.auth import get_user_model
-from django.test import TestCase, Client
-
-from posts.models import Post, Group
+from django.test import Client, TestCase
+from posts.models import Group, Post
 
 User = get_user_model()
 
@@ -55,7 +54,7 @@ class PostURLTests(TestCase):
             "/profile/TestAuthor/",
             f"/posts/{self.post.pk}/",
             f"/posts/{self.post.pk}/edit/",
-            f"/create/",
+            "/create/",
         }
         for address in url_names:
             with self.subTest(address=address):
@@ -72,7 +71,7 @@ class PostURLTests(TestCase):
             f"/posts/{self.post.pk}/edit/": (
                 f"/auth/login/?next=/posts/{self.post.pk}/edit/"
             ),
-            f"/create/": "/auth/login/?next=/create/",
+            "/create/": "/auth/login/?next=/create/",
         }
         for address, redirect_address in url_names_redirects.items():
             with self.subTest(address=address):
@@ -98,7 +97,7 @@ class PostURLTests(TestCase):
             "/profile/TestAuthor/": "posts/profile.html",
             f"/posts/{self.post.pk}/": "posts/post_detail.html",
             f"/posts/{self.post.pk}/edit/": "posts/create_post.html",
-            f"/create/": "posts/create_post.html",
+            "/create/": "posts/create_post.html",
         }
         for address, template in url_names_templates.items():
             with self.subTest(address=address):
