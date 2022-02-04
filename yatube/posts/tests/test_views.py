@@ -1,6 +1,5 @@
 from django import forms
 from django.contrib.auth import get_user_model
-from django.conf import settings
 from django.test import Client, TestCase
 from django.urls import reverse
 
@@ -9,7 +8,7 @@ from posts.models import Group, Post
 User = get_user_model()
 
 
-POST_PER_PAGE = getattr(settings, "POST_PER_PAGE", None)
+POST_PER_PAGE = 10
 POST_COUNT_ON_SECOND_PAGE = 2
 
 
