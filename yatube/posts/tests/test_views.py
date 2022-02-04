@@ -136,7 +136,7 @@ class TaskPagesTests(TestCase):
         )
         self.assertEqual(len(response.context["page_obj"]), POST_PER_PAGE)
 
-    def test_posts_group_page_second_show_two_items(self):
+    def test_posts_group_page_second_show_requared_number_items(self):
         """Шаблон posts/group_list вторая страница содержит
         POST_COUNT_ON_SECOND_PAGE результатов.
         """
@@ -175,7 +175,7 @@ class TaskPagesTests(TestCase):
         )
         self.assertEqual(len(response.context["page_obj"]), POST_PER_PAGE)
 
-    def test_postsuser_page_second_show_two_items(self):
+    def test_postsuser_page_second_show_requared_number_items(self):
         """Шаблон posts/group_list вторая страница содержит
         POST_COUNT_ON_SECOND_PAGE результатов.
         """
