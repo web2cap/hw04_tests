@@ -226,12 +226,14 @@ class TaskPagesTests(TestCase):
     def test_posts_detail_page_show_correct_context(self):
         """Шаблон posts/post_detail сформирован с правильным контекстом."""
 
-        response = self.client.get(
+        response = self.authorized_client.get(
             reverse("posts:post_detail", kwargs={"post_id": self.post[0].pk})
         )
         context_object = response.context["post"]
         db_by_pk_post = Post.objects.filter(pk=self.post[0].pk).first()
         self.db_vs_context_comparison(context_object, db_by_pk_post)
+        form_field = response.context["form"].fields["text"]
+        self.assertIsInstance(form_field, forms.fields.CharField)
 
     def test_posts_create_page_show_correct_context(self):
         """Шаблон posts/index сформирован с правильным контекстом."""
@@ -259,3 +261,23 @@ class TaskPagesTests(TestCase):
         )
         for secong_group_post in response.context["page_obj"]:
             self.assertNotEqual(secong_group_post.pk, self.post[0].pk)
+
+    def test_new_comment_created_show_correct_context(self):
+        comment_text = f"Комментарий от {self.user_username_value} выводиться"
+        form_data = {"text": comment_text}
+        response = self.authorized_client.post(
+            reverse(
+                "posts:add_comment",
+                kwargs={"post_id": str(self.post_second.pk)},
+            ),
+            data=form_data,
+            follow=True,
+        )
+        response = self.client.get(
+            reverse(
+                "posts:post_detail", kwargs={"post_id": self.post_second.pk}
+            )
+        )
+        context__first_object = response.context["comments"][0]
+        self.assertEqual(context__first_object.author, self.user)
+        self.assertEqual(context__first_object.text, comment_text)

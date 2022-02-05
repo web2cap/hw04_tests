@@ -6,7 +6,7 @@ from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
-from posts.models import Group, Post
+from posts.models import Comment, Group, Post
 
 User = get_user_model()
 
@@ -63,7 +63,7 @@ class PostCreateFormTests(TestCase):
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
 
-    def test_create_post(self):
+    def test_post_create(self):
         """Валидная форма создает запись в Post."""
 
         post_count = Post.objects.count()
@@ -93,7 +93,7 @@ class PostCreateFormTests(TestCase):
         self.assertEqual(last_post.group, self.group)
         self.assertEqual(last_post.image, created_post_small_gif_filename)
 
-    def test_edit_post(self):
+    def test_post_edit(self):
         """Валидная форма редактирует запись в Post.
         Изменяются текст записи и группа.
         """
@@ -139,4 +139,56 @@ class PostCreateFormTests(TestCase):
                 pk=self.post.pk,
                 image=edited_post_small_gif_filename,
             ).exists()
+        )
+
+    def test_comment_add_can_autorized(self):
+        "Оставлять комментарии может авторизованный пользователь."
+        comment_count = Comment.objects.filter(post=self.post).count()
+        comment_text = f"Комментарий от {self.user_username_value}"
+        form_data = {"text": comment_text}
+        response = self.authorized_client.post(
+            reverse(
+                "posts:add_comment", kwargs={"post_id": str(self.post.pk)}
+            ),
+            data=form_data,
+            follow=True,
+        )
+        self.assertRedirects(
+            response,
+            reverse(
+                "posts:post_detail", kwargs={"post_id": str(self.post.pk)}
+            ),
+        )
+        self.assertEqual(
+            Comment.objects.filter(post=self.post).count(), comment_count + 1
+        )
+        self.assertTrue(
+            Comment.objects.filter(post=self.post, text=comment_text).exists()
+        )
+
+    def test_comment_add_cant_guest(self):
+        "Оставлять комментарии не может гость."
+        comment_count = Comment.objects.filter(post=self.post).count()
+        comment_text = f"Комментарий от гостя"
+        form_data = {"text": comment_text}
+        response = self.client.post(
+            reverse(
+                "posts:add_comment", kwargs={"post_id": str(self.post.pk)}
+            ),
+            data=form_data,
+            follow=True,
+        )
+        self.assertRedirects(
+            response,
+            reverse("users:login")
+            + "?next="
+            + reverse(
+                "posts:add_comment", kwargs={"post_id": str(self.post.pk)}
+            ),
+        )
+        self.assertEqual(
+            Comment.objects.filter(post=self.post).count(), comment_count
+        )
+        self.assertFalse(
+            Comment.objects.filter(post=self.post, text=comment_text).exists()
         )
