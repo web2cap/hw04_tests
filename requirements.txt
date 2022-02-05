@@ -9,5 +9,4 @@ six==1.14.0               # via packaging
 sorl-thumbnail==12.6.3
 mixer==7.1.2
 pillow
-sorl-thumbnail
 
