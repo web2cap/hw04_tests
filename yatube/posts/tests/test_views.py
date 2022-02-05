@@ -1,18 +1,24 @@
+import shutil
+import tempfile
+
 from django import forms
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.test import Client, TestCase
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
-
 from posts.models import Group, Post
 
 User = get_user_model()
+
+TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 
 
 POST_PER_PAGE = getattr(settings, "POST_PER_PAGE", None)
 POST_COUNT_ON_SECOND_PAGE = 2
 
 
+@override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
 class TaskPagesTests(TestCase):
     @classmethod
     def setUpClass(cls):
@@ -33,20 +39,44 @@ class TaskPagesTests(TestCase):
             description="Тестовое описание второй группы",
         )
 
+        image_small_gif = (
+            b"\x47\x49\x46\x38\x39\x61\x01\x00"
+            b"\x01\x00\x00\x00\x00\x21\xf9\x04"
+            b"\x01\x0a\x00\x01\x00\x2c\x00\x00"
+            b"\x00\x00\x01\x00\x01\x00\x00\x02"
+            b"\x02\x4c\x01\x00\x3b"
+        )
         cls.post = []
         for i in range(POST_PER_PAGE + POST_COUNT_ON_SECOND_PAGE):
+            image_small_gif_uploaded = SimpleUploadedFile(
+                name=f"posts/post_image_{i}.gif",
+                content=image_small_gif,
+                content_type="image/gif",
+            )
             cls.post.append(
                 Post.objects.create(
                     author=cls.user,
                     text=f"Тестовая запись {i}",
                     group=cls.group,
+                    image=image_small_gif_uploaded,
                 )
             )
+        image_small_gif_uploaded = SimpleUploadedFile(
+            name=f"posts/post_second_image.gif",
+            content=image_small_gif,
+            content_type="image/gif",
+        )
         cls.post_second = Post.objects.create(
             author=cls.user_second,
             text="Тестовая запись созданная вторым автором",
             group=cls.group_second,
+            image=image_small_gif_uploaded,
         )
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
 
     def setUp(self):
         self.authorized_client = Client()
@@ -54,12 +84,14 @@ class TaskPagesTests(TestCase):
 
     def db_vs_context_comparison(self, context_object, db_object):
         """Сравнивает объект контекста с объектом базы данных по полям:
-        pk, text, group, author.
+        pk, text, group, author, image.
         """
         self.assertEqual(context_object.pk, db_object.pk)
         self.assertEqual(context_object.text, db_object.text)
         self.assertEqual(context_object.group, db_object.group)
         self.assertEqual(context_object.author, db_object.author)
+        self.assertEqual(context_object.image, db_object.image)
+        self.assertNotEqual(context_object.image, "")
 
     def test_pages_uses_correct_template(self):
         """URL-адрес использует соответствующий шаблон."""
@@ -208,6 +240,7 @@ class TaskPagesTests(TestCase):
         form_fields = {
             "text": forms.fields.CharField,
             "group": forms.fields.ChoiceField,
+            "image": forms.fields.ImageField,
         }
 
         for value, expected in form_fields.items():
