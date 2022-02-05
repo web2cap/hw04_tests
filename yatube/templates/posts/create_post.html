@@ -25,10 +25,7 @@
                 {% endfor %}
             {% endif %}
 
-            <form method="post"
-                  action="{{ request.get_full_path }}"
-                  enctype="multipart/form-data"
-            >
+            <form method="post" action="{{ request.get_full_path }}">
               {% csrf_token %}
              
               {% for field in form %}
