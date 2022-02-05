@@ -73,6 +73,11 @@ class TaskPagesTests(TestCase):
             image=image_small_gif_uploaded,
         )
 
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
+
     def setUp(self):
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
