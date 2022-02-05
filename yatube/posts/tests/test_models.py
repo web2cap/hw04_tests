@@ -34,7 +34,7 @@ class PostModelTest(TestCase):
         post = PostModelTest.post
         field_verboses = {
             "text": "Текст записи",
-            "pub_date": "Дата публикации",
+            "created": "Дата создания",
             "author": "Автор публикации",
             "group": "Группа",
         }

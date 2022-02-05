@@ -8,7 +8,7 @@ from .utils import paginations
 
 def index(request):
     """Вывод POST_PER_PAGE объектов модели Post,
-    отсортированных по полю pub_date по убыванию,
+    отсортированных по полю created по убыванию,
     с учетом номера страницы переданного в GET.
     """
 

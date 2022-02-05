@@ -4,9 +4,9 @@ from .models import Group, Post
 
 
 class PostAdmin(admin.ModelAdmin):
-    list_display = ("pk", "text", "pub_date", "author", "group")
+    list_display = ("pk", "text", "created", "author", "group")
     search_fields = ("text",)
-    list_filter = ("pub_date",)
+    list_filter = ("created",)
     list_editable = ("group",)
     empty_value_display = "-пусто-"
 
