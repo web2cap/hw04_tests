@@ -23,9 +23,14 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = "9^%3wz7tb1*%r!9p$*&ylrvgq3soz7rof5-$@2yn56@z^pe859"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = ["127.0.0.1", "localhost", "testserver"]
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "[::1]",
+    "testserver",
+]
 
 
 # Application definition
@@ -41,6 +46,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "sorl.thumbnail",
 ]
 
 MIDDLEWARE = [
@@ -140,3 +146,5 @@ EMAIL_FILE_PATH = os.path.join(BASE_DIR, "sent_emails")
 POST_MIN_LEN = 1
 # постов на странице
 POST_PER_PAGE = 10
+
+CSRF_FAILURE_VIEW = "core.views.csrf_failure"

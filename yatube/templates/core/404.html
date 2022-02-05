@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Страницы не найдена{% endblock %}
+{% block content %}
+<div class="container py-5">
+   <h1>Страницы с адресом {{ path }} не существует</h1>
+   <p><a href="{% url 'posts:index' %}"> Идите на главную</a></p>
+
+   <p><img src="{% static 'img/httpcode/404.png' %}" width="900" height="450" 
+           class="d-inline-block align-top" alt="Ошибка 403 доступ запрещен"></p>
+
+</div>
+{% endblock %}
