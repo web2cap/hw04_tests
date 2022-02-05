@@ -150,4 +150,7 @@ POST_MIN_LEN = 1
 # постов на странице
 POST_PER_PAGE = 10
 
+# настройки для Comments
+COMMENT_MIN_LEN = 1
+
 CSRF_FAILURE_VIEW = "core.views.csrf_failure"
