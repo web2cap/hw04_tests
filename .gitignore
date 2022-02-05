@@ -147,3 +147,4 @@ dmypy.json
 
 #user Media
 media/
+staticfiles/
