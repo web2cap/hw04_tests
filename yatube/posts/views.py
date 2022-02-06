@@ -1,11 +1,13 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.cache import cache_page
 
 from .forms import CommentForm, PostForm
 from .models import Group, Post, User
 from .utils import paginations
 
 
+@cache_page(60 * 20)
 def index(request):
     """Вывод POST_PER_PAGE объектов модели Post,
     отсортированных по полю created по убыванию,

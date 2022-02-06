@@ -4,6 +4,7 @@ import tempfile
 from django import forms
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
@@ -39,7 +40,7 @@ class TaskPagesTests(TestCase):
             description="Тестовое описание второй группы",
         )
 
-        image_small_gif = (
+        cls.image_small_gif = (
             b"\x47\x49\x46\x38\x39\x61\x01\x00"
             b"\x01\x00\x00\x00\x00\x21\xf9\x04"
             b"\x01\x0a\x00\x01\x00\x2c\x00\x00"
@@ -50,7 +51,7 @@ class TaskPagesTests(TestCase):
         for i in range(POST_PER_PAGE + POST_COUNT_ON_SECOND_PAGE):
             image_small_gif_uploaded = SimpleUploadedFile(
                 name=f"posts/post_image_{i}.gif",
-                content=image_small_gif,
+                content=cls.image_small_gif,
                 content_type="image/gif",
             )
             cls.post.append(
@@ -63,7 +64,7 @@ class TaskPagesTests(TestCase):
             )
         image_small_gif_uploaded = SimpleUploadedFile(
             name=f"posts/post_second_image.gif",
-            content=image_small_gif,
+            content=cls.image_small_gif,
             content_type="image/gif",
         )
         cls.post_second = Post.objects.create(
@@ -79,10 +80,13 @@ class TaskPagesTests(TestCase):
         shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
 
     def setUp(self):
+        cache.clear()
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
 
-    def db_vs_context_comparison(self, context_object, db_object):
+    def db_vs_context_comparison(
+        self, context_object, db_object, no_iamge=False
+    ):
         """Сравнивает объект контекста с объектом базы данных по полям:
         pk, text, group, author, image.
         """
@@ -90,8 +94,9 @@ class TaskPagesTests(TestCase):
         self.assertEqual(context_object.text, db_object.text)
         self.assertEqual(context_object.group, db_object.group)
         self.assertEqual(context_object.author, db_object.author)
-        self.assertEqual(context_object.image, db_object.image)
-        self.assertNotEqual(context_object.image, "")
+        if not no_iamge:
+            self.assertEqual(context_object.image, db_object.image)
+            self.assertNotEqual(context_object.image, "")
 
     def test_pages_uses_correct_template(self):
         """URL-адрес использует соответствующий шаблон."""
@@ -263,6 +268,8 @@ class TaskPagesTests(TestCase):
             self.assertNotEqual(secong_group_post.pk, self.post[0].pk)
 
     def test_new_comment_created_show_correct_context(self):
+        """Новый комментарий коректно отображается на странице поста."""
+
         comment_text = f"Комментарий от {self.user_username_value} выводиться"
         form_data = {"text": comment_text}
         response = self.authorized_client.post(
@@ -281,3 +288,45 @@ class TaskPagesTests(TestCase):
         context__first_object = response.context["comments"][0]
         self.assertEqual(context__first_object.author, self.user)
         self.assertEqual(context__first_object.text, comment_text)
+
+    def test_cache_index_page(self):
+        """Тест кэширования.
+        Добавленная тестовая запись появляется после очистки кэша.
+        Удаленна тестовая запись пропадает только  после очистки кэша.
+        """
+
+        response = self.client.get(reverse("posts:index"))
+        context_first_object_before_add = response.context["page_obj"][0]
+
+        post_text = "Тестовая запись появиться после очистки кэша."
+        post = Post.objects.create(
+            author=self.user, text=post_text, group=self.group
+        )
+        response = self.client.get(reverse("posts:index"))
+        context_right_after_add = response.context
+        self.assertIsNone(context_right_after_add)
+
+        cache.clear()
+        response = self.client.get(reverse("posts:index"))
+        context_first_object_add_after_clear_cache = response.context[
+            "page_obj"
+        ][0]
+        self.db_vs_context_comparison(
+            post, context_first_object_add_after_clear_cache, no_iamge=True
+        )
+
+        post.delete()
+        response = self.client.get(reverse("posts:index"))
+        context_right_after_delete_post = response.context
+        self.assertIsNone(context_right_after_delete_post)
+
+        cache.clear()
+        response = self.client.get(reverse("posts:index"))
+        context_first_object_delete_after_clear_cache = response.context[
+            "page_obj"
+        ][0]
+        self.db_vs_context_comparison(
+            context_first_object_before_add,
+            context_first_object_delete_after_clear_cache,
+            no_iamge=True,
+        )

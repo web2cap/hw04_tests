@@ -1,8 +1,8 @@
 from http import HTTPStatus
 
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.test import Client, TestCase
-
 from posts.models import Group, Post
 
 User = get_user_model()
@@ -102,6 +102,7 @@ class PostURLTests(TestCase):
         }
         for address, template in url_names_templates.items():
             with self.subTest(address=address):
+                cache.clear()
                 response = self.authorized_client.get(address)
                 self.assertTemplateUsed(response, template)
 

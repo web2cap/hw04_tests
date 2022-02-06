@@ -1,12 +1,15 @@
 {% extends 'base.html' %}
+{% load cache %}
 {% block title %}Последние обновления на сайте{% endblock %}
 {% block content %}
-  {% for post in page_obj %}
-  {% include 'posts/includes/post_list.html' %}
-    {% if post.group %}   
-      <a href="{% url 'posts:group_list' post.group.slug %}">все записи группы</a>
-    {% endif %}
-    {% if not forloop.last %}<hr>{% endif %}
-  {% endfor %}
-  {% include 'posts/includes/paginator.html' %}
+  {% cache 120 index_page %}
+    {% for post in page_obj %}
+      {% include 'posts/includes/post_list.html' %}
+        {% if post.group %}   
+          <a href="{% url 'posts:group_list' post.group.slug %}">все записи группы</a>
+        {% endif %}
+        {% if not forloop.last %}<hr>{% endif %}
+    {% endfor %}
+    {% include 'posts/includes/paginator.html' %}
+  {% endcache %}
 {% endblock %}
