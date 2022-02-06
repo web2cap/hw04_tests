@@ -14,15 +14,6 @@ class PostForm(forms.ModelForm):
         model = Post
         fields = ["text", "group", "image"]
 
-    def __init__(self, *args, **kwargs):
-        """Задает css class полям формы"""
-
-        super(PostForm, self).__init__(*args, **kwargs)
-        for field_name in self.fields:
-            self.fields[field_name].widget.attrs.update(
-                {"class": "form-control"}
-            )
-
     def clean_text(self):
         data = self.cleaned_data["text"]
 

@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 {% load static %}
 <html lang="ru">
-
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -20,10 +19,13 @@
     {% include 'includes/header.html' %}
   </header>
   <main>
-    {% block content%}
-    {% endblock %}
+    <div class="container py-5">
+      {% block content%}
+      {% endblock %}
+    </div>
   </main>
   <footer class="border-top text-center py-3">
     {% include 'includes/footer.html' %}
   </footer>
 </body>
+</html>
