@@ -1,8 +1,7 @@
 {% extends 'base.html' %}
-{% load cache %}
 {% block title %}Ваши подписки на авторов{% endblock %}
 {% block content %}
-  {% cache 120 index_page %}
+    {% include 'posts/includes/switcher.html' %}
     {% for post in page_obj %}
       {% include 'posts/includes/post_list.html' %}
         {% if post.group %}   
@@ -11,5 +10,4 @@
         {% if not forloop.last %}<hr>{% endif %}
     {% endfor %}
     {% include 'posts/includes/paginator.html' %}
-  {% endcache %}
 {% endblock %}

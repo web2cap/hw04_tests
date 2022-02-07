@@ -1,3 +1,5 @@
+from urllib import request
+
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import cache_page
@@ -47,10 +49,16 @@ def profile(request, username):
     post_list = author.posts.all()
     page_obj = paginations(request, post_list)
 
+    if Follow.objects.filter(user=request.user, author=author).count():
+        following = True
+    else:
+        following = False
+
     template = "posts/profile.html"
     context = {
         "page_obj": page_obj,
         "author": author,
+        "following": following,
     }
 
     return render(request, template, context)
@@ -130,15 +138,16 @@ def add_comment(request, post_id):
 def follow_index(request):
     """Посты авторов, на которых подписан текущий пользователь."""
 
-    # user = get_object_or_404(User, username=request.user)
+    user = get_object_or_404(User, username=request.user)
 
-    follow = Follow.objects.filter(user=request.user)
-
-    # post_list = Post.objects.filter(author=follow)
-    # page_obj = paginations(request, post_list)
+    followed_people = Follow.objects.filter(user=user).values("author")
+    print(followed_people)
+    post_list = Post.objects.filter(author__in=followed_people)
+    print(len(post_list))
+    page_obj = paginations(request, post_list)
 
     context = {
-        #    "page_obj": page_obj,
+        "page_obj": page_obj,
     }
 
     return render(request, "posts/follow.html", context)
@@ -148,10 +157,20 @@ def follow_index(request):
 def profile_follow(request, username):
     """Подписаться на автора."""
 
-    pass
+    author = get_object_or_404(User, username=username)
+    allready_follow = Follow.objects.filter(
+        user=request.user, author=author
+    ).count()
+    if not allready_follow:
+        Follow.objects.create(user=request.user, author=author)
+
+    return redirect("posts:profile", username)
 
 
 @login_required
 def profile_unfollow(request, username):
     """Отписка от автора."""
-    pass
+
+    author = get_object_or_404(User, username=username)
+    Follow.objects.filter(user=request.user, author=author).delete()
+    return redirect("posts:profile", username)
