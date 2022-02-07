@@ -3,7 +3,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import cache_page
 
 from .forms import CommentForm, PostForm
-from .models import Group, Post, User
+from .models import Follow, Group, Post, User
 from .utils import paginations
 
 
@@ -128,8 +128,19 @@ def add_comment(request, post_id):
 
 @login_required
 def follow_index(request):
-    request.user
-    context = {}
+    """Посты авторов, на которых подписан текущий пользователь."""
+
+    # user = get_object_or_404(User, username=request.user)
+
+    follow = Follow.objects.filter(user=request.user)
+
+    # post_list = Post.objects.filter(author=follow)
+    # page_obj = paginations(request, post_list)
+
+    context = {
+        #    "page_obj": page_obj,
+    }
+
     return render(request, "posts/follow.html", context)
 
 
