@@ -160,7 +160,7 @@ def profile_follow(request, username):
     allready_follow = Follow.objects.filter(
         user=request.user, author=author
     ).count()
-    if not allready_follow:
+    if not allready_follow and request.user != author:
         Follow.objects.create(user=request.user, author=author)
 
     return redirect("posts:profile", username)
