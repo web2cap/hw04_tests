@@ -81,8 +81,12 @@ class TaskPagesTests(TestCase):
 
     def setUp(self):
         cache.clear()
+
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
+
+        self.authorized_client_second = Client()
+        self.authorized_client_second.force_login(self.user_second)
 
     def db_vs_context_comparison(
         self, context_object, db_object, no_iamge=False
@@ -330,3 +334,60 @@ class TaskPagesTests(TestCase):
             context_first_object_delete_after_clear_cache,
             no_iamge=True,
         )
+
+    def test_autorized_can_follow_unfollow(self):
+        """Авторизованный пользователь может подписываться на других пользователей
+        и удалять других пользователей из подписок."""
+
+        profile_redirect_address = reverse(
+            "posts:profile", kwargs={"username": self.user_second.username}
+        )
+
+        response = self.authorized_client.get(
+            reverse(
+                "posts:profile_follow",
+                kwargs={"username": self.user_second.username},
+            )
+        )
+        self.assertRedirects(response, profile_redirect_address)
+        response = self.authorized_client.get(reverse("posts:follow_index"))
+        context_first_object = response.context["page_obj"][0]
+        self.assertEqual(context_first_object.author, self.user_second)
+
+        response = self.authorized_client.get(
+            reverse(
+                "posts:profile_unfollow",
+                kwargs={"username": self.user_second.username},
+            )
+        )
+        self.assertRedirects(response, profile_redirect_address)
+        response = self.authorized_client.get(
+            reverse(
+                "posts:profile_unfollow",
+                kwargs={"username": self.user_second.username},
+            )
+        )
+        response = self.authorized_client.get(reverse("posts:follow_index"))
+        context_len_not_follower = len(response.context["page_obj"])
+        self.assertEqual(context_len_not_follower, 0)
+
+    def test_new_post_only_following_feed(self):
+        """Новая запись пользователя появляется в ленте тех,
+        кто на него подписан и не появляется в ленте тех, кто не подписан."""
+
+        response = self.authorized_client.get(
+            reverse(
+                "posts:profile_follow",
+                kwargs={"username": self.user_second.username},
+            )
+        )
+        response = self.authorized_client.get(reverse("posts:follow_index"))
+        context_first_object_follower = response.context["page_obj"][0]
+        self.assertEqual(
+            context_first_object_follower.author, self.user_second
+        )
+        response = self.authorized_client_second.get(
+            reverse("posts:follow_index")
+        )
+        context_len_not_follower = len(response.context["page_obj"])
+        self.assertEqual(context_len_not_follower, 0)

@@ -30,6 +30,8 @@ class PostURLTests(TestCase):
         cls.url_unexisting_page = "/unexisting_page/"
 
     def setUp(self):
+        # cache.clear()
+
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
         self.authorized_client_not_author = Client()
@@ -44,6 +46,7 @@ class PostURLTests(TestCase):
             f"/profile/{self.user_username_value}/",
             f"/posts/{self.post.pk}/",
         }
+
         for address in url_names:
             with self.subTest(address=address):
                 response = self.client.get(address)

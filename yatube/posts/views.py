@@ -48,11 +48,12 @@ def profile(request, username):
 
     post_list = author.posts.all()
     page_obj = paginations(request, post_list)
-
-    if Follow.objects.filter(user=request.user, author=author).count():
-        following = True
-    else:
-        following = False
+    following = False
+    if request.user.is_authenticated:
+        if Follow.objects.filter(user=request.user, author=author).count():
+            following = "can_unfollow"
+        else:
+            following = "can_follow"
 
     template = "posts/profile.html"
     context = {
@@ -141,9 +142,7 @@ def follow_index(request):
     user = get_object_or_404(User, username=request.user)
 
     followed_people = Follow.objects.filter(user=user).values("author")
-    print(followed_people)
     post_list = Post.objects.filter(author__in=followed_people)
-    print(len(post_list))
     page_obj = paginations(request, post_list)
 
     context = {
