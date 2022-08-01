@@ -1,4 +1,4 @@
-# Catalog of articles categorized by groups
+# Bloggers Social Network
 In this version adds reviews for articles and comments for reviews, subscriptions to authors, cache, images for articles.
 Templates refactored.
 
